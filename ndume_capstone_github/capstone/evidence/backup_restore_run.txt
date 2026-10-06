@@ -1,0 +1,10 @@
+backup written: backups/capstone_2026-10-06.dump (5.5M)
+archive readable: OK
+NOTICE:  database "capstone_restore_test" does not exist, skipping
+restore check ranches: 3 = 3 OK
+restore check animals: 6000 = 6000 OK
+restore check weight_records: 569696 = 569696 OK
+restore check health_events: 18000 = 18000 OK
+restore check sales: 450 = 450 OK
+restore check audit_log: 27189 = 27189 OK
+backup + test restore: SUCCESS

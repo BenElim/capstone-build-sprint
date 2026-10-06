@@ -1,0 +1,39 @@
+-- -- Q4: margin per sold animal = sale price - lifetime health cost (owner/manager only, via RLS)
+-- run as capstone_app, tenant ranch 1, role owner (RLS active), 2026-10-06T05:28:42Z
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=43.70..43.70 rows=1 width=81) (actual time=1.458..1.462 rows=20 loops=1)
+   Buffers: shared hit=914
+   ->  Sort  (cost=43.70..43.70 rows=1 width=81) (actual time=1.457..1.459 rows=20 loops=1)
+         Sort Key: ((s.price_kes - COALESCE(sum(h.cost_kes), '0'::numeric))) DESC
+         Sort Method: top-N heapsort  Memory: 27kB
+         Buffers: shared hit=914
+         ->  GroupAggregate  (cost=43.66..43.69 rows=1 width=81) (actual time=1.151..1.355 rows=150 loops=1)
+               Group Key: a.tag_number, s.price_kes
+               Buffers: shared hit=911
+               ->  Sort  (cost=43.66..43.66 rows=1 width=23) (actual time=1.141..1.162 rows=450 loops=1)
+                     Sort Key: a.tag_number, s.price_kes
+                     Sort Method: quicksort  Memory: 49kB
+                     Buffers: shared hit=911
+                     ->  Nested Loop Left Join  (cost=0.73..43.65 rows=1 width=23) (actual time=0.048..0.818 rows=450 loops=1)
+                           Buffers: shared hit=908
+                           ->  Nested Loop  (cost=0.44..29.54 rows=1 width=25) (actual time=0.040..0.347 rows=150 loops=1)
+                                 Buffers: shared hit=453
+                                 ->  Index Scan using idx_sales_ranch on sales s  (cost=0.16..12.91 rows=2 width=16) (actual time=0.010..0.054 rows=150 loops=1)
+                                       Index Cond: (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer)
+                                       Filter: (NULLIF(current_setting('app.role'::text, true), ''::text) = ANY ('{owner,manager}'::text[]))
+                                       Buffers: shared hit=3
+                                 ->  Index Scan using animals_pkey on animals a  (cost=0.28..8.31 rows=1 width=17) (actual time=0.002..0.002 rows=1 loops=150)
+                                       Index Cond: (animal_id = s.animal_id)
+                                       Filter: (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer)
+                                       Buffers: shared hit=450
+                           ->  Index Scan using idx_health_animal on health_events h  (cost=0.29..14.10 rows=1 width=14) (actual time=0.002..0.003 rows=3 loops=150)
+                                 Index Cond: (animal_id = s.animal_id)
+                                 Filter: (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer)
+                                 Buffers: shared hit=455
+ Planning:
+   Buffers: shared hit=458 dirtied=3
+ Planning Time: 1.215 ms
+ Execution Time: 1.568 ms
+(33 rows)
+

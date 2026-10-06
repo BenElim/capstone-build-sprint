@@ -1,0 +1,25 @@
+BEGIN
+SET
+SET
+--- normal lookup by tag
+ tag_number | status 
+------------+--------
+ R1-00012   | sold
+(1 row)
+
+--- injection attempt as a bound parameter (expect 0 rows)
+ tag_number 
+------------
+(0 rows)
+
+--- injection attempt that would drop a table if concatenated (expect 0 rows, table intact)
+ tag_number 
+------------
+(0 rows)
+
+ animals_still_there 
+---------------------
+                2000
+(1 row)
+
+ROLLBACK

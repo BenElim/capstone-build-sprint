@@ -1,0 +1,48 @@
+-- -- Q1: herd by breed with average LATEST weight (dashboard card)
+-- run as capstone_app, tenant ranch 1, role owner (RLS active), 2026-10-06T05:28:45Z
+                                                                                QUERY PLAN                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=35132951.97..35132951.98 rows=5 width=47) (actual time=32326.904..32326.908 rows=5 loops=1)
+   Sort Key: (count(*)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=8783849
+   ->  GroupAggregate  (cost=19025.95..35132951.91 rows=5 width=47) (actual time=6566.697..32326.872 rows=5 loops=1)
+         Group Key: b.name
+         Buffers: shared hit=8783846
+         ->  Nested Loop  (cost=19025.95..35132937.96 rows=1850 width=13) (actual time=227.679..32322.462 rows=1850 loops=1)
+               Buffers: shared hit=8783846
+               ->  Nested Loop  (cost=35.39..351.09 rows=1850 width=15) (actual time=205.931..210.593 rows=1850 loops=1)
+                     Join Filter: (a.breed_id = b.breed_id)
+                     Rows Removed by Join Filter: 7400
+                     Buffers: shared hit=43
+                     ->  Index Scan using breeds_name_key on breeds b  (cost=0.13..12.21 rows=5 width=11) (actual time=0.003..0.025 rows=5 loops=1)
+                           Buffers: shared hit=2
+                     ->  Materialize  (cost=35.26..204.75 rows=1850 width=12) (actual time=41.183..41.784 rows=1850 loops=5)
+                           Buffers: shared hit=41
+                           ->  Bitmap Heap Scan on animals a  (cost=35.26..195.50 rows=1850 width=12) (actual time=205.909..206.841 rows=1850 loops=1)
+                                 Recheck Cond: ((ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer) AND (status = 'active'::text))
+                                 Heap Blocks: exact=37
+                                 Buffers: shared hit=41
+                                 ->  Bitmap Index Scan on idx_animals_ranch_status  (cost=0.00..34.79 rows=1850 width=0) (actual time=205.881..205.882 rows=1850 loops=1)
+                                       Index Cond: ((ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer) AND (status = 'active'::text))
+                                       Buffers: shared hit=4
+               ->  Limit  (cost=18990.57..18990.57 rows=1 width=10) (actual time=17.355..17.356 rows=1 loops=1850)
+                     Buffers: shared hit=8783803
+                     ->  Sort  (cost=18990.57..18990.65 rows=33 width=10) (actual time=17.353..17.353 rows=1 loops=1850)
+                           Sort Key: w.weighed_on DESC
+                           Sort Method: top-N heapsort  Memory: 25kB
+                           Buffers: shared hit=8783803
+                           ->  Seq Scan on weight_records w  (cost=0.00..18990.40 rows=33 width=10) (actual time=6.827..17.335 rows=95 loops=1850)
+                                 Filter: ((animal_id = a.animal_id) AND (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer))
+                                 Rows Removed by Filter: 569601
+                                 Buffers: shared hit=8783800
+ Planning:
+   Buffers: shared hit=390 dirtied=1
+ Planning Time: 0.941 ms
+ JIT:
+   Functions: 21
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 0.946 ms, Inlining 65.048 ms, Optimization 85.011 ms, Emission 55.798 ms, Total 206.803 ms
+ Execution Time: 32344.796 ms
+(42 rows)
+

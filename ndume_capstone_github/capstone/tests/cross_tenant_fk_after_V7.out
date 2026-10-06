@@ -1,0 +1,8 @@
+BEGIN
+SET
+SET
+SET
+--- tenant 1 inserts a weigh-in pointing at a ranch-2 animal (expect REJECTED after V7)
+psql:tests/cross_tenant_fk_test.sql:5: ERROR:  insert or update on table "weight_records" violates foreign key constraint "weight_same_ranch"
+DETAIL:  Key is not present in table "animals".
+ROLLBACK

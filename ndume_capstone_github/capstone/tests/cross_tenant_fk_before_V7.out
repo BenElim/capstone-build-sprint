@@ -1,0 +1,7 @@
+BEGIN
+SET
+SET
+SET
+--- tenant 1 inserts a weigh-in pointing at a ranch-2 animal (expect REJECTED after V7)
+INSERT 0 1
+ROLLBACK

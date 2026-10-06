@@ -1,0 +1,25 @@
+== 1. cache-aside dashboard
+MISS ranch:1:dashboard:herd -> querying PostgreSQL
+   cold (PostgreSQL): 74 ms
+HIT  ranch:1:dashboard:herd
+   warm (Redis):      7 ms   (includes process start of redis-cli)
+   TTL left: 300s
+   value: [{"breed":"Angus","head":392,"avg_latest_kg":623.5}, 
+ {"breed":"Ankole","head":375,"avg_latest_kg":626.8}, 
+ {"breed":"Friesian","head":371,"avg_latest_kg":596.8}, 
+ {"breed":"Sahiwal","head":362,"avg_latest_kg":607.7}, 
+ {"breed":"Boran","head":350,"avg_latest_kg":591.7}]...
+== 2. invalidate on write (a new weigh-in makes the cached dashboard stale)
+   cache key deleted by the write path
+== 3. login session (token -> user, expires with the session)
+   user_id 1 ranch_id 1 role owner  ttl=1800s
+== 4. rate limit: 5 login attempts per minute per IP
+   attempt 1: allowed (count=1)
+   attempt 2: allowed (count=2)
+   attempt 3: allowed (count=3)
+   attempt 4: allowed (count=4)
+   attempt 5: allowed (count=5)
+   attempt 6: BLOCKED (count=6)
+   attempt 7: BLOCKED (count=7)
+== 5. 'latest 5 weigh-ins' feed as a capped list
+   length=5 newest={"animal":107,"kg":407}

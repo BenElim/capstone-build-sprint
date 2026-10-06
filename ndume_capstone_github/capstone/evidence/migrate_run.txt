@@ -1,0 +1,8 @@
+[applied] V1__core_tables.sql (78 ms)
+[applied] V2__indexes.sql (47 ms)
+[applied] V3__audit_and_triggers.sql (39 ms)
+[applied] V4__row_level_security.sql (50 ms)
+[applied] V5__seed_demo_data.sql (27851 ms)
+[applied] V6__perf_indexes.sql (391 ms)
+[applied] V7__tenant_consistent_fks.sql (130 ms)
+Successfully applied migrations.

@@ -1,0 +1,113 @@
+erDiagram
+    RANCHES ||--o{ APP_USERS : "employs"
+    RANCHES ||--o{ PASTURES : "owns"
+    RANCHES ||--o{ ANIMALS : "owns"
+    RANCHES ||--o{ BUYERS : "has"
+    RANCHES ||--o{ FEED_LOGS : "records"
+    BREEDS ||--o{ ANIMALS : "classifies"
+    PASTURES ||--o{ ANIMALS : "grazes"
+    PASTURES ||--o{ FEED_LOGS : "consumes"
+    ANIMALS ||--o{ WEIGHT_RECORDS : "has"
+    ANIMALS ||--o{ HEALTH_EVENTS : "has"
+    ANIMALS ||--o| SALES : "sold in"
+    ANIMALS |o--o{ ANIMALS : "dam of"
+    ANIMALS |o--o{ ANIMALS : "sire of"
+    ANIMALS ||--o{ BREEDING_EVENTS : "dam in"
+    ANIMALS |o--o{ BREEDING_EVENTS : "sire in"
+    ANIMALS |o--o| BREEDING_EVENTS : "calf from"
+    BUYERS ||--o{ SALES : "purchases"
+    APP_USERS ||--o{ WEIGHT_RECORDS : "records"
+    APP_USERS ||--o{ HEALTH_EVENTS : "records"
+
+    RANCHES {
+        int ranch_id PK
+        text name UK
+        text county
+        timestamptz created_at
+    }
+    APP_USERS {
+        int user_id PK
+        int ranch_id FK
+        text email UK
+        text password_hash
+        text full_name
+        text role "owner|manager|vet|worker"
+    }
+    BREEDS {
+        int breed_id PK
+        text name UK
+        text purpose "beef|dairy|dual"
+    }
+    PASTURES {
+        int pasture_id PK
+        int ranch_id FK
+        text name
+        numeric area_ha
+        int capacity_head
+    }
+    ANIMALS {
+        bigint animal_id PK
+        int ranch_id FK
+        text tag_number "UK per ranch"
+        text name
+        int breed_id FK
+        char sex "M|F"
+        date birth_date
+        bigint dam_id FK
+        bigint sire_id FK
+        int pasture_id FK
+        text status "active|sold|deceased"
+    }
+    WEIGHT_RECORDS {
+        bigint weight_id PK
+        bigint animal_id FK
+        int ranch_id FK
+        date weighed_on
+        numeric weight_kg
+        int recorded_by FK
+    }
+    HEALTH_EVENTS {
+        bigint event_id PK
+        bigint animal_id FK
+        int ranch_id FK
+        date event_date
+        text event_type
+        text medicine
+        date next_due_on
+        numeric cost_kes
+        int recorded_by FK
+    }
+    BREEDING_EVENTS {
+        bigint breeding_id PK
+        int ranch_id FK
+        bigint dam_id FK
+        bigint sire_id FK
+        date mated_on
+        date expected_calving
+        text outcome
+        bigint calf_id FK
+    }
+    FEED_LOGS {
+        bigint feed_id PK
+        int ranch_id FK
+        int pasture_id FK
+        date logged_on
+        text feed_type
+        numeric quantity_kg
+        numeric cost_kes
+    }
+    BUYERS {
+        int buyer_id PK
+        int ranch_id FK
+        text name
+        bytea phone_enc "encrypted"
+    }
+    SALES {
+        bigint sale_id PK
+        int ranch_id FK
+        bigint animal_id FK "UK, one sale per animal"
+        int buyer_id FK
+        date sold_on
+        numeric price_kes
+        numeric weight_at_sale_kg
+    }

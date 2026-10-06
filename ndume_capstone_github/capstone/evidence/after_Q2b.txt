@@ -1,0 +1,30 @@
+-- -- Q2b: average daily gain, rewritten: one index-driven pass per animal instead of join + re-aggregate
+-- run as capstone_app, tenant ranch 1, role owner (RLS active), 2026-10-06T05:33:45Z
+                                                                                                                     QUERY PLAN                                                                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=44876.68..44876.73 rows=20 width=41) (actual time=17.910..17.914 rows=20 loops=1)
+   Buffers: shared hit=8990
+   ->  Sort  (cost=44876.68..44881.30 rows=1850 width=41) (actual time=17.909..17.911 rows=20 loops=1)
+         Sort Key: (round(((((array_agg(w.weight_kg ORDER BY w.weighed_on DESC))[1]) - ((array_agg(w.weight_kg ORDER BY w.weighed_on))[1])) / (NULLIF(((max(w.weighed_on)) - (min(w.weighed_on))), 0))::numeric), 3)) DESC NULLS LAST, a.tag_number
+         Sort Method: top-N heapsort  Memory: 26kB
+         Buffers: shared hit=8990
+         ->  Nested Loop  (cost=24.04..44827.45 rows=1850 width=41) (actual time=0.081..17.472 rows=1571 loops=1)
+               Buffers: shared hit=8984
+               ->  Seq Scan on animals a  (cost=0.00..264.00 rows=1850 width=17) (actual time=0.009..1.566 rows=1850 loops=1)
+                     Filter: ((status = 'active'::text) AND (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer))
+                     Rows Removed by Filter: 4150
+                     Buffers: shared hit=114
+               ->  Aggregate  (cost=24.04..24.05 rows=1 width=72) (actual time=0.008..0.008 rows=1 loops=1850)
+                     Filter: (max(w.weighed_on) > min(w.weighed_on))
+                     Rows Removed by Filter: 0
+                     Buffers: shared hit=8870
+                     ->  Index Scan Backward using idx_weight_animal_date on weight_records w  (cost=0.42..24.02 rows=2 width=10) (actual time=0.003..0.005 rows=5 loops=1850)
+                           Index Cond: ((animal_id = a.animal_id) AND (weighed_on >= '2026-07-03'::date))
+                           Filter: (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer)
+                           Buffers: shared hit=8867
+ Planning:
+   Buffers: shared hit=399
+ Planning Time: 0.928 ms
+ Execution Time: 17.997 ms
+(24 rows)
+

@@ -1,0 +1,36 @@
+-- -- Q3: vaccinations overdue as of 2026-10-01 (not followed by a later vaccination of the same medicine)
+-- run as capstone_app, tenant ranch 1, role owner (RLS active), 2026-10-06T05:33:45Z
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.88..270.04 rows=50 width=27) (actual time=0.056..0.702 rows=50 loops=1)
+   Buffers: shared hit=445
+   ->  Nested Loop Anti Join  (cost=0.88..2864.83 rows=532 width=27) (actual time=0.055..0.693 rows=50 loops=1)
+         Buffers: shared hit=445
+         ->  Nested Loop  (cost=0.59..2217.89 rows=798 width=39) (actual time=0.041..0.472 rows=50 loops=1)
+               Buffers: shared hit=294
+               ->  Index Scan using idx_health_vacc_due on health_events h  (cost=0.29..969.84 rows=2587 width=30) (actual time=0.017..0.210 rows=51 loops=1)
+                     Index Cond: (next_due_on < '2026-10-01'::date)
+                     Filter: (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer)
+                     Rows Removed by Filter: 89
+                     Buffers: shared hit=141
+               ->  Memoize  (cost=0.30..0.54 rows=1 width=17) (actual time=0.005..0.005 rows=1 loops=51)
+                     Cache Key: h.animal_id
+                     Cache Mode: logical
+                     Hits: 0  Misses: 51  Evictions: 0  Overflows: 0  Memory Usage: 7kB
+                     Buffers: shared hit=153
+                     ->  Index Scan using animals_ranch_animal_uk on animals a  (cost=0.29..0.53 rows=1 width=17) (actual time=0.004..0.004 rows=1 loops=51)
+                           Index Cond: ((ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer) AND (animal_id = h.animal_id))
+                           Filter: (status = 'active'::text)
+                           Rows Removed by Filter: 0
+                           Buffers: shared hit=153
+         ->  Index Scan using idx_health_animal on health_events h2  (cost=0.29..0.80 rows=1 width=26) (actual time=0.004..0.004 rows=0 loops=50)
+               Index Cond: (animal_id = h.animal_id)
+               Filter: ((event_date > h.event_date) AND (medicine = h.medicine) AND (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer))
+               Rows Removed by Filter: 3
+               Buffers: shared hit=151
+ Planning:
+   Buffers: shared hit=537
+ Planning Time: 1.878 ms
+ Execution Time: 0.819 ms
+(30 rows)
+

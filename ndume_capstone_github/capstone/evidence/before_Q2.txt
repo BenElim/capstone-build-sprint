@@ -1,0 +1,53 @@
+-- -- Q2: average daily gain (kg/day) per animal over the last 90 days, top 20
+-- run as capstone_app, tenant ranch 1, role owner (RLS active), 2026-10-06T05:29:18Z
+                                                                                                                            QUERY PLAN                                                                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=38092552.99..38092553.04 rows=20 width=49) (actual time=35398.520..35398.526 rows=20 loops=1)
+   Buffers: shared hit=8789830
+   ->  Sort  (cost=38092552.99..38092557.62 rows=1850 width=49) (actual time=35132.114..35132.118 rows=20 loops=1)
+         Sort Key: (round(((max(w.weight_kg) FILTER (WHERE (w.weighed_on = (max(x.weighed_on)))) - max(w.weight_kg) FILTER (WHERE (w.weighed_on = (min(x.weighed_on))))) / (NULLIF(((max(x.weighed_on)) - (min(x.weighed_on))), 0))::numeric), 3)) DESC NULLS LAST
+         Sort Method: top-N heapsort  Memory: 27kB
+         Buffers: shared hit=8789830
+         ->  GroupAggregate  (cost=40994.35..38092503.76 rows=1850 width=49) (actual time=206.789..35130.640 rows=1571 loops=1)
+               Group Key: a.tag_number, (min(x.weighed_on)), (max(x.weighed_on))
+               Buffers: shared hit=8789827
+               ->  Incremental Sort  (cost=40994.35..38092398.08 rows=3396 width=27) (actual time=206.733..35125.587 rows=10051 loops=1)
+                     Sort Key: a.tag_number, (min(x.weighed_on)), (max(x.weighed_on))
+                     Presorted Key: a.tag_number
+                     Full-sort Groups: 295  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+                     Buffers: shared hit=8789827
+                     ->  Nested Loop  (cost=20414.94..38092299.37 rows=3396 width=27) (actual time=52.753..35114.776 rows=10051 loops=1)
+                           Join Filter: (a.animal_id = w.animal_id)
+                           Rows Removed by Join Filter: 17057293
+                           Buffers: shared hit=8789821
+                           ->  Nested Loop  (cost=20414.94..37767615.19 rows=1850 width=25) (actual time=37.064..33361.920 rows=1571 loops=1)
+                                 Buffers: shared hit=8785073
+                                 ->  Index Scan using animals_ranch_id_tag_number_key on animals a  (cost=0.29..452.56 rows=1850 width=17) (actual time=0.053..7.389 rows=1850 loops=1)
+                                       Index Cond: (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer)
+                                       Filter: (status = 'active'::text)
+                                       Rows Removed by Filter: 150
+                                       Buffers: shared hit=1273
+                                 ->  Aggregate  (cost=20414.65..20414.66 rows=1 width=8) (actual time=18.027..18.027 rows=1 loops=1850)
+                                       Filter: (max(x.weighed_on) > min(x.weighed_on))
+                                       Rows Removed by Filter: 0
+                                       Buffers: shared hit=8783800
+                                       ->  Seq Scan on weight_records x  (cost=0.00..20414.64 rows=2 width=4) (actual time=9.409..18.021 rows=5 loops=1850)
+                                             Filter: ((weighed_on >= '2026-07-03'::date) AND (animal_id = a.animal_id) AND (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer))
+                                             Rows Removed by Filter: 569691
+                                             Buffers: shared hit=8783800
+                           ->  Materialize  (cost=0.00..19045.48 rows=11015 width=18) (actual time=0.001..0.521 rows=10864 loops=1571)
+                                 Buffers: shared hit=4748
+                                 ->  Seq Scan on weight_records w  (cost=0.00..18990.40 rows=11015 width=18) (actual time=0.019..19.478 rows=10864 loops=1)
+                                       Filter: ((weighed_on >= '2026-07-03'::date) AND (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer))
+                                       Rows Removed by Filter: 558832
+                                       Buffers: shared hit=4748
+ Planning:
+   Buffers: shared hit=370
+ Planning Time: 1.039 ms
+ JIT:
+   Functions: 27
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 1.424 ms, Inlining 64.201 ms, Optimization 124.231 ms, Emission 78.078 ms, Total 267.934 ms
+ Execution Time: 35413.472 ms
+(47 rows)
+

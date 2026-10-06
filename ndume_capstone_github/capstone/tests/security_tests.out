@@ -1,0 +1,85 @@
+--- 1. no tenant set => fail closed (expect 0)
+ animals_visible 
+-----------------
+               0
+(1 row)
+
+--- 2. tenant 1 sees only its own rows (expect 1 distinct ranch, 2000 rows)
+BEGIN
+SET
+SET
+SET
+ animals | ranches 
+---------+---------
+    2000 |       1
+(1 row)
+
+--- 3. cannot insert a row for another tenant (expect RLS error)
+psql:tests/security_tests.sql:10: ERROR:  new row violates row-level security policy for table "pastures"
+ROLLBACK
+--- 4. password_hash and phone_enc are not readable (expect permission denied x2)
+BEGIN
+SET
+psql:tests/security_tests.sql:15: ERROR:  permission denied for table app_users
+ROLLBACK
+BEGIN
+SET
+psql:tests/security_tests.sql:18: ERROR:  permission denied for table buyers
+ROLLBACK
+--- 5. worker cannot see sales (expect 0), owner can (expect >0)
+BEGIN
+SET
+SET
+ worker_sales 
+--------------
+            0
+(1 row)
+
+ROLLBACK
+BEGIN
+SET
+SET
+ owner_sales 
+-------------
+         150
+(1 row)
+
+ROLLBACK
+--- 6. app cannot delete or tamper with audit log (expect permission denied x2)
+BEGIN
+psql:tests/security_tests.sql:26: ERROR:  permission denied for table animals
+ROLLBACK
+BEGIN
+SET
+SET
+psql:tests/security_tests.sql:27: ERROR:  permission denied for table audit_log
+ROLLBACK
+BEGIN
+psql:tests/security_tests.sql:28: ERROR:  permission denied for table audit_log
+ROLLBACK
+--- 7. audit trail is written for an update made by the app (expect 1 UPDATE row)
+BEGIN
+SET
+SET
+SET
+UPDATE 1
+ action | changed_by | new_name  
+--------+------------+-----------
+ UPDATE | 1          | Test Bull
+(1 row)
+
+ROLLBACK
+--- 8. selling an already-sold animal is rejected (expect exception)
+BEGIN
+SET
+SET
+psql:tests/security_tests.sql:40: ERROR:  animal 12 is not active (status=sold)
+CONTEXT:  PL/pgSQL function sale_marks_animal_sold() line 6 at RAISE
+ROLLBACK
+--- 9. app role is not a superuser
+      rolname      | rolsuper | rolcreaterole | rolcreatedb 
+-------------------+----------+---------------+-------------
+ capstone_app      | f        | f             | f
+ capstone_readonly | f        | f             | f
+(2 rows)
+

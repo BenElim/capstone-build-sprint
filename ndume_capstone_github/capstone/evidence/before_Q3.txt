@@ -1,0 +1,40 @@
+-- -- Q3: vaccinations overdue as of 2026-10-01 (not followed by a later vaccination of the same medicine)
+-- run as capstone_app, tenant ranch 1, role owner (RLS active), 2026-10-06T05:28:42Z
+                                                                                               QUERY PLAN                                                                                                
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1602.03..1602.15 rows=50 width=27) (actual time=10.375..10.384 rows=50 loops=1)
+   Buffers: shared hit=11070
+   ->  Sort  (cost=1602.03..1603.36 rows=532 width=27) (actual time=10.374..10.379 rows=50 loops=1)
+         Sort Key: h.next_due_on
+         Sort Method: top-N heapsort  Memory: 30kB
+         Buffers: shared hit=11070
+         ->  Nested Loop Anti Join  (cost=218.92..1584.36 rows=532 width=27) (actual time=0.762..9.646 rows=3576 loops=1)
+               Buffers: shared hit=11067
+               ->  Hash Join  (cost=218.63..937.42 rows=798 width=39) (actual time=0.723..4.752 rows=3576 loops=1)
+                     Hash Cond: (h.animal_id = a.animal_id)
+                     Buffers: shared hit=258
+                     ->  Seq Scan on health_events h  (cost=0.00..712.00 rows=2587 width=30) (actual time=0.006..3.281 rows=3876 loops=1)
+                           Filter: ((next_due_on < '2026-10-01'::date) AND (event_type = 'vaccination'::text) AND (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer))
+                           Rows Removed by Filter: 14124
+                           Buffers: shared hit=217
+                     ->  Hash  (cost=195.50..195.50 rows=1850 width=17) (actual time=0.703..0.704 rows=1850 loops=1)
+                           Buckets: 2048  Batches: 1  Memory Usage: 118kB
+                           Buffers: shared hit=41
+                           ->  Bitmap Heap Scan on animals a  (cost=35.26..195.50 rows=1850 width=17) (actual time=0.072..0.357 rows=1850 loops=1)
+                                 Recheck Cond: ((ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer) AND (status = 'active'::text))
+                                 Heap Blocks: exact=37
+                                 Buffers: shared hit=41
+                                 ->  Bitmap Index Scan on idx_animals_ranch_status  (cost=0.00..34.79 rows=1850 width=0) (actual time=0.061..0.061 rows=1850 loops=1)
+                                       Index Cond: ((ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer) AND (status = 'active'::text))
+                                       Buffers: shared hit=4
+               ->  Index Scan using idx_health_animal on health_events h2  (cost=0.29..0.80 rows=1 width=26) (actual time=0.001..0.001 rows=0 loops=3576)
+                     Index Cond: (animal_id = h.animal_id)
+                     Filter: ((event_date > h.event_date) AND (medicine = h.medicine) AND (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer))
+                     Rows Removed by Filter: 3
+                     Buffers: shared hit=10809
+ Planning:
+   Buffers: shared hit=481 dirtied=4
+ Planning Time: 1.440 ms
+ Execution Time: 10.486 ms
+(34 rows)
+

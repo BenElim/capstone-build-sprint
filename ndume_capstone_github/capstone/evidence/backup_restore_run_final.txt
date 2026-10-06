@@ -1,0 +1,2 @@
+restore check audit_log: 27189 = 27189 OK
+backup + test restore: SUCCESS

@@ -1,0 +1,16 @@
+        email         | hash_prefix | len | pw_ok 
+----------------------+-------------+-----+-------
+ owner@ranch1.example | $2a$10$     |  60 | t
+(1 row)
+
+  name   |  ciphertext_hex  | decrypted_with_key 
+---------+------------------+--------------------
+ Buyer 1 | c30d040703026164 | +254700001001
+ Buyer 2 | c30d040703021ffd | +254700001002
+(2 rows)
+
+ users_with_non_bcrypt_hash 
+----------------------------
+                          0
+(1 row)
+

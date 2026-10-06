@@ -1,0 +1,44 @@
+-- -- Q5: pedigree: all descendants of one animal (recursive CTE)
+-- run as capstone_app, tenant ranch 1, role owner (RLS active), 2026-10-06T05:33:45Z
+                                                                                QUERY PLAN                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=262.93..263.30 rows=21 width=12) (actual time=0.104..0.107 rows=2 loops=1)
+   Group Key: tree.gen
+   Buffers: shared hit=14
+   CTE tree
+     ->  Recursive Union  (cost=0.94..262.05 rows=21 width=29) (actual time=0.048..0.076 rows=2 loops=1)
+           Buffers: shared hit=11
+           ->  Index Scan using animals_pkey on animals animals_1  (cost=0.94..8.97 rows=1 width=29) (actual time=0.046..0.048 rows=1 loops=1)
+                 Index Cond: (animal_id = $2)
+                 Filter: (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer)
+                 Buffers: shared hit=6
+                 InitPlan 2 (returns $2)
+                   ->  Result  (cost=0.64..0.65 rows=1 width=8) (actual time=0.029..0.030 rows=1 loops=1)
+                         Buffers: shared hit=3
+                         InitPlan 1 (returns $1)
+                           ->  Limit  (cost=0.29..0.64 rows=1 width=8) (actual time=0.027..0.027 rows=1 loops=1)
+                                 Buffers: shared hit=3
+                                 ->  Index Scan using animals_ranch_animal_uk on animals  (cost=0.29..425.56 rows=1214 width=8) (actual time=0.025..0.026 rows=1 loops=1)
+                                       Index Cond: ((ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer) AND (animal_id IS NOT NULL))
+                                       Filter: (sex = 'F'::bpchar)
+                                       Buffers: shared hit=3
+           ->  Nested Loop  (cost=0.28..25.29 rows=2 width=29) (actual time=0.012..0.012 rows=0 loops=2)
+                 Buffers: shared hit=5
+                 ->  WorkTable Scan on tree t  (cost=0.00..0.22 rows=3 width=12) (actual time=0.001..0.001 rows=1 loops=2)
+                       Filter: (gen < 6)
+                 ->  Index Scan using idx_animals_dam on animals c  (cost=0.28..8.34 rows=1 width=25) (actual time=0.009..0.010 rows=0 loops=2)
+                       Index Cond: (dam_id = t.animal_id)
+                       Filter: (ranch_id = (NULLIF(current_setting('app.ranch_id'::text, true), ''::text))::integer)
+                       Buffers: shared hit=5
+   ->  Sort  (cost=0.88..0.93 rows=21 width=4) (actual time=0.099..0.099 rows=2 loops=1)
+         Sort Key: tree.gen
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=14
+         ->  CTE Scan on tree  (cost=0.00..0.42 rows=21 width=4) (actual time=0.050..0.079 rows=2 loops=1)
+               Buffers: shared hit=11
+ Planning:
+   Buffers: shared hit=345
+ Planning Time: 1.244 ms
+ Execution Time: 0.226 ms
+(38 rows)
+

@@ -1,0 +1,47 @@
+== Tables and RLS status (public schema)
+         table         | rls_enabled | policies 
+-----------------------+-------------+----------
+ animals               | t           |        1
+ app_users             | t           |        1
+ audit_log             | t           |        1
+ breeding_events       | t           |        1
+ breeds                | f           |        0
+ buyers                | t           |        1
+ feed_logs             | t           |        1
+ flyway_schema_history | f           |        0
+ health_events         | t           |        1
+ pastures              | t           |        1
+ ranches               | t           |        1
+ sales                 | t           |        1
+ weight_records        | t           |        1
+(13 rows)
+
+== Roles: superuser flags
+      rolname      | rolsuper | rolcreaterole | rolcreatedb | rolbypassrls 
+-------------------+----------+---------------+-------------+--------------
+ capstone_app      | f        | f             | f           | f
+ capstone_readonly | f        | f             | f           | f
+(2 rows)
+
+== Table privileges for capstone_app (excluding SELECT)
+   table_name    |     privs      
+-----------------+----------------
+ animals         | INSERT, UPDATE
+ breeding_events | INSERT, UPDATE
+ buyers          | INSERT, UPDATE
+ feed_logs       | INSERT, UPDATE
+ health_events   | INSERT, UPDATE
+ pastures        | INSERT, UPDATE
+ sales           | INSERT
+ weight_records  | INSERT, UPDATE
+(8 rows)
+
+== Audit triggers
+     table     |        events        
+---------------+----------------------
+ animals       | DELETE,INSERT,UPDATE
+ buyers        | DELETE,INSERT,UPDATE
+ health_events | DELETE,INSERT,UPDATE
+ sales         | DELETE,INSERT,UPDATE
+(4 rows)
+
